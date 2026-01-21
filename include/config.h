@@ -11,4 +11,7 @@
 #define NUM_PARTICLES 20000
 #define MAX_TRIES 1000
 
+#define CELL_SIZE 40
+#define MAX_PARTICLES_PER_CELL 32
+
 #endif

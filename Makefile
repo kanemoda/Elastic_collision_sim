@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -Iinclude
 LDFLAGS = -lraylib -lm
 
-SRC = src/main.c src/world.c src/physics.c src/render.c src/particle.c
+SRC = src/main.c src/world.c src/physics.c src/render.c src/particle.c src/grid.c
 OBJ = $(SRC:.c=.o)
 TARGET = collisions
 

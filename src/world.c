@@ -3,6 +3,7 @@
 #include "physics.h"
 #include "config.h"
 #include "raylib.h"
+#include "grid.h"
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
@@ -38,6 +39,7 @@ void World_Init(int count)
 
     particle_count = count;
     particles = malloc(sizeof(Particle) * particle_count);
+    Grid_Init();
 
     for (int i = 0; i < particle_count; i++) {
         Particle *p = &particles[i];
@@ -64,5 +66,5 @@ void World_Update(float dt)
     }
 
     Physics_HandleWallCollisions();
-    Physics_HandleParticleCollisions();
+    Physics_HandleParticleCollisionsGrid();
 }
