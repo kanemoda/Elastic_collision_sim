@@ -7,7 +7,8 @@
 #define HEIGHT 900
 #define FPS 60
 
-#define NUM_PARTICLES 400
+#define NUM_PARTICLES 2000
+#define MAX_TRIES 1000
 
 typedef struct
 {
@@ -80,6 +81,24 @@ Color RandomColor(void)
         .a = 255};
 }
 
+bool doesOverlaps(float x, float y, float r, int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        float dx = x - particles[i].x;
+        float dy = y - particles[i].y;
+        float minDist = r + particles[i].r;
+
+        if (dx*dx + dy*dy < minDist * minDist)
+        {
+            return true;
+        }
+        
+    }
+    return false;
+    
+}
+
 void InitParticles()
 {
 
@@ -87,13 +106,29 @@ void InitParticles()
 
     for (int i = 0; i < NUM_PARTICLES; i++)
     {
-        Particle particle = particles[i];
-        particles[i].r = GetRandomValue(5, 15);
-        particles[i].x = GetRandomValue(particles[i].r, WIDTH - particles[i].r);
-        particles[i].y = GetRandomValue(particles[i].r, HEIGHT - particles[i].r);
-        particles[i].vx = GetRandomValue(-200, 200);
-        particles[i].vy = GetRandomValue(-200, 200);
-        particles[i].color = RandomColor();
+        Particle *p = &particles[i];
+        p->r = GetRandomValue(5, 15);
+
+        int tries = 0;
+        do
+        {
+            p->x = GetRandomValue(p->r, WIDTH - p->r);
+            p->y = GetRandomValue(p->r, HEIGHT - p->r);
+            tries++;
+        } while (doesOverlaps(p->x, p->y, p->r, i) && tries < MAX_TRIES);
+
+        if (tries == MAX_TRIES)
+        {
+            p->x = GetRandomValue(p->r, WIDTH - p->r);
+            p->y = GetRandomValue(p->r, HEIGHT - p->r);
+        }
+        
+        
+
+        
+        p->vx = GetRandomValue(-200, 200);
+        p->vy = GetRandomValue(-200, 200);
+        p->color = RandomColor();
     }
 }
 
@@ -188,8 +223,8 @@ int main(void)
         float dt = GetFrameTime();
         BeginDrawing();
         ClearBackground(BLACK);
-        DrawFPS(5, 5);
         DrawParticles();
+        DrawFPS(5, 5);
         EndDrawing();
 
         UpdateParticles(dt);
