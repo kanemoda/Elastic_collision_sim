@@ -13,16 +13,16 @@ void Physics_HandleWallCollisions(void)
         if (p->x <= p->r) {
             p->x = p->r;
             p->vx *= -1;
-        } else if (p->x >= WIDTH - p->r) {
-            p->x = WIDTH - p->r;
+        } else if (p->x >= WORLD_WIDTH - p->r) {
+            p->x = WORLD_WIDTH - p->r;
             p->vx *= -1;
         }
 
         if (p->y <= p->r) {
             p->y = p->r;
             p->vy *= -1;
-        } else if (p->y >= HEIGHT - p->r) {
-            p->y = HEIGHT - p->r;
+        } else if (p->y >= WORLD_HEIGHT - p->r) {
+            p->y = WORLD_HEIGHT - p->r;
             p->vy *= -1;
         }
     }

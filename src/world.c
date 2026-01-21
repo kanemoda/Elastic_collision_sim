@@ -45,8 +45,8 @@ void World_Init(int count)
 
         int tries = 0;
         do {
-            p->x = GetRandomValue(p->r, WIDTH - p->r);
-            p->y = GetRandomValue(p->r, HEIGHT - p->r);
+            p->x = GetRandomValue(p->r, WORLD_WIDTH - p->r);
+            p->y = GetRandomValue(p->r, WORLD_HEIGHT - p->r);
             tries++;
         } while (DoesOverlap(p->x, p->y, p->r, i) && tries < MAX_TRIES);
 
