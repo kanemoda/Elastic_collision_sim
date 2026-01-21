@@ -1,9 +1,9 @@
 #include "physics.h"
 #include "particle.h"
+#include "config.h"
 #include <math.h>
 
-#define WIDTH 1600
-#define HEIGHT 900
+
 
 void Physics_HandleWallCollisions(void)
 {

@@ -1,14 +1,13 @@
 #include "world.h"
 #include "particle.h"
 #include "physics.h"
+#include "config.h"
 #include "raylib.h"
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 
-#define WIDTH 1600
-#define HEIGHT 900
-#define MAX_TRIES 1000
+
 
 static Color RandomColor(void)
 {
