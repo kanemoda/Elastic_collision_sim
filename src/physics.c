@@ -3,7 +3,14 @@
 #include "config.h"
 #include "grid.h"
 #include <math.h>
+#include <stdio.h>
 
+
+static long long g_pair_checks = 0;
+static long long g_overlap_pass = 0;
+static long long g_impulse_tests = 0;
+static long long g_sqrt_calls = 0;
+static long long g_impulses_applied = 0;
 
 
 void Physics_HandleWallCollisions(void)
@@ -13,18 +20,18 @@ void Physics_HandleWallCollisions(void)
 
         if (p->x <= p->r) {
             p->x = p->r;
-            p->vx *= -1;
+            p->vx *= -1.0f;
         } else if (p->x >= WORLD_WIDTH - p->r) {
             p->x = WORLD_WIDTH - p->r;
-            p->vx *= -1;
+            p->vx *= -1.0f;
         }
 
         if (p->y <= p->r) {
             p->y = p->r;
-            p->vy *= -1;
+            p->vy *= -1.0f;
         } else if (p->y >= WORLD_HEIGHT - p->r) {
             p->y = WORLD_HEIGHT - p->r;
-            p->vy *= -1;
+            p->vy *= -1.0f;
         }
     }
 }
@@ -34,6 +41,8 @@ void Physics_HandleParticleCollisionsNaive(void)
     for (int i = 0; i < particle_count; i++) {
         for (int j = i + 1; j < particle_count; j++) {
 
+            g_pair_checks++;
+
             Particle *p1 = &particles[i];
             Particle *p2 = &particles[j];
 
@@ -42,15 +51,34 @@ void Physics_HandleParticleCollisionsNaive(void)
 
             float dist2 = dx * dx + dy * dy;
             float minDist = p1->r + p2->r;
+            float minDist2 = minDist * minDist;
 
-            if (dist2 >= minDist * minDist)
+            if (dist2 >= minDist2)
                 continue;
 
+            g_overlap_pass++;
+
+            float rvx = p1->vx - p2->vx;
+            float rvy = p1->vy - p2->vy;
+
+            float velAlongNormalTimesDist = rvx * dx + rvy * dy;
+
+            if (velAlongNormalTimesDist > 0.0f)
+                continue;
+
+            g_impulse_tests++;
+            g_sqrt_calls++;
+
             float dist = sqrtf(dist2);
-            float nx = (dist > 0.0f) ? dx / dist : 1.0f;
-            float ny = (dist > 0.0f) ? dy / dist : 0.0f;
+            if (dist == 0.0f)
+                continue;
+
+            float nx = dx / dist;
+            float ny = dy / dist;
 
             float overlap = minDist - dist;
+            if (overlap > 2.0f)
+                overlap = 2.0f;
 
             float w1 = p2->r / (p1->r + p2->r);
             float w2 = p1->r / (p1->r + p2->r);
@@ -63,24 +91,21 @@ void Physics_HandleParticleCollisionsNaive(void)
             float m1 = p1->r * p1->r;
             float m2 = p2->r * p2->r;
 
-            float rvx = p1->vx - p2->vx;
-            float rvy = p1->vy - p2->vy;
-
             float velAlongNormal = rvx * nx + rvy * ny;
-            if (velAlongNormal > 0)
-                continue;
 
-            float e = 1.0f;
-            float j = -(1.0f + e) * velAlongNormal;
-            j /= (1.0f / m1 + 1.0f / m2);
+            float e = 0.98f;
+            float jimp = -(1.0f + e) * velAlongNormal;
+            jimp /= (1.0f / m1 + 1.0f / m2);
 
-            float ix = j * nx;
-            float iy = j * ny;
+            float ix = jimp * nx;
+            float iy = jimp * ny;
 
             p1->vx += ix / m1;
             p1->vy += iy / m1;
             p2->vx -= ix / m2;
             p2->vy -= iy / m2;
+
+            g_impulses_applied++;
         }
     }
 }
@@ -88,31 +113,28 @@ void Physics_HandleParticleCollisionsNaive(void)
 void Physics_HandleParticleCollisionsGrid(void)
 {
     Grid_Clear();
-
-    
     for (int i = 0; i < particle_count; i++) {
         Grid_InsertParticle(i);
     }
-    
+
     for (int i = 0; i < particle_count; i++) {
 
         Particle *p1 = &particles[i];
-
         int cx = (int)(p1->x / CELL_SIZE);
         int cy = (int)(p1->y / CELL_SIZE);
 
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
 
-                int nx = cx + dx;
-                int ny = cy + dy;
-
-                GridCell *cell = Grid_GetCell(nx, ny);
+                GridCell *cell = Grid_GetCell(cx + dx, cy + dy);
                 if (!cell) continue;
 
                 for (int k = 0; k < cell->count; k++) {
+
                     int j = cell->indices[k];
                     if (j <= i) continue;
+
+                    g_pair_checks++;
 
                     Particle *p2 = &particles[j];
 
@@ -121,47 +143,84 @@ void Physics_HandleParticleCollisionsGrid(void)
 
                     float dist2 = dxp * dxp + dyp * dyp;
                     float minDist = p1->r + p2->r;
+                    float minDist2 = minDist * minDist;
 
-                    if (dist2 >= minDist * minDist)
+                    if (dist2 >= minDist2)
                         continue;
 
-                    float dist = sqrtf(dist2);
-                    float nxn = (dist > 0.0f) ? dxp / dist : 1.0f;
-                    float nyn = (dist > 0.0f) ? dyp / dist : 0.0f;
-
-                    float overlap = minDist - dist;
-
-                    float w1 = p2->r / (p1->r + p2->r);
-                    float w2 = p1->r / (p1->r + p2->r);
-
-                    p1->x += nxn * overlap * w1;
-                    p1->y += nyn * overlap * w1;
-                    p2->x -= nxn * overlap * w2;
-                    p2->y -= nyn * overlap * w2;
-
-                    float m1 = p1->r * p1->r;
-                    float m2 = p2->r * p2->r;
+                    g_overlap_pass++;
 
                     float rvx = p1->vx - p2->vx;
                     float rvy = p1->vy - p2->vy;
 
-                    float velAlongNormal = rvx * nxn + rvy * nyn;
-                    if (velAlongNormal > 0)
+                    float velAlongNormalTimesDist = rvx * dxp + rvy * dyp;
+
+                    if (velAlongNormalTimesDist > 0.0f)
                         continue;
 
-                    float e = 1.0f;
+                    g_impulse_tests++;
+                    g_sqrt_calls++;
+
+                    float dist = sqrtf(dist2);
+                    if (dist == 0.0f)
+                        continue;
+
+                    float nx = dxp / dist;
+                    float ny = dyp / dist;
+
+                    float overlap = minDist - dist;
+                    if (overlap > 2.0f)
+                        overlap = 2.0f;
+
+                    float w1 = p2->r / (p1->r + p2->r);
+                    float w2 = p1->r / (p1->r + p2->r);
+
+                    p1->x += nx * overlap * w1;
+                    p1->y += ny * overlap * w1;
+                    p2->x -= nx * overlap * w2;
+                    p2->y -= ny * overlap * w2;
+
+                    float m1 = p1->r * p1->r;
+                    float m2 = p2->r * p2->r;
+
+                    float velAlongNormal = rvx * nx + rvy * ny;
+
+                    float e = 0.98f;
                     float jimp = -(1.0f + e) * velAlongNormal;
                     jimp /= (1.0f / m1 + 1.0f / m2);
 
-                    float ix = jimp * nxn;
-                    float iy = jimp * nyn;
+                    float ix = jimp * nx;
+                    float iy = jimp * ny;
 
                     p1->vx += ix / m1;
                     p1->vy += iy / m1;
                     p2->vx -= ix / m2;
                     p2->vy -= iy / m2;
+
+                    g_impulses_applied++;
                 }
             }
         }
+    }
+
+    
+    static int frame = 0;
+    frame++;
+
+    if (frame % 60 == 0) {
+        printf(
+            "[GRID] pairs=%lld overlap=%lld impulse_tests=%lld sqrt=%lld impulses=%lld\n",
+            g_pair_checks,
+            g_overlap_pass,
+            g_impulse_tests,
+            g_sqrt_calls,
+            g_impulses_applied
+        );
+
+        g_pair_checks = 0;
+        g_overlap_pass = 0;
+        g_impulse_tests = 0;
+        g_sqrt_calls = 0;
+        g_impulses_applied = 0;
     }
 }
