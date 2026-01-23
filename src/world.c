@@ -66,5 +66,5 @@ void World_Update(float dt)
     }
 
     Physics_HandleWallCollisions();
-    Physics_HandleParticleCollisionsGrid();
+    Physics_HandleParticleCollisionsGrid_PBD();
 }
