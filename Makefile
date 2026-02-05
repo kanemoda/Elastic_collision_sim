@@ -1,8 +1,19 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -Iinclude
-LDFLAGS = -lraylib -lm
 
-SRC = src/main.c src/world.c src/physicsCommon.c src/render.c src/particle.c src/grid.c src/physicsNaive.c src/physicsGrid.c 
+CFLAGS = -Wall -Wextra -O2 -Iinclude
+LDFLAGS = -lglfw -lGL -lm
+
+SRC = \
+src/main.c \
+src/world.c \
+src/particle.c \
+src/grid.c \
+src/physicsCommon.c \
+src/physicsNaive.c \
+src/physicsGrid.c \
+src/render.c \
+glad.c
+
 OBJ = $(SRC:.c=.o)
 TARGET = collisions
 
@@ -13,5 +24,6 @@ $(TARGET): $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+
 run:
-	./collisions
+	./$(TARGET)

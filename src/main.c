@@ -1,34 +1,22 @@
-#include "raylib.h"
 #include "config.h"
 #include "world.h"
 #include "render.h"
 
+#include <GLFW/glfw3.h>
+
 int main(void)
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Large World Particle Simulation");
-    SetTargetFPS(FPS);
-
-    World_Init(NUM_PARTICLES);
     Render_Init();
+    World_Init(NUM_PARTICLES);
 
-    Camera2D *cam = Render_GetCamera();
+    double last = glfwGetTime();
 
-    while (!WindowShouldClose()) {
-        float dt = GetFrameTime();
+    while (!Render_ShouldClose()) {
+        double now = glfwGetTime();
+        float dt = (float)(now - last);
+        last = now;
 
-        // -------- Camera controls
-        if (IsKeyDown(KEY_Q)) cam->zoom *= 1.01f;
-        if (IsKeyDown(KEY_E)) cam->zoom *= 0.99f;
-
-        if (IsKeyDown(KEY_W)) cam->target.y -= 500 * dt;
-        if (IsKeyDown(KEY_S)) cam->target.y += 500 * dt;
-        if (IsKeyDown(KEY_A)) cam->target.x -= 500 * dt;
-        if (IsKeyDown(KEY_D)) cam->target.x += 500 * dt;
-
-        // Clamp zoom
-        if (cam->zoom < 0.02f) cam->zoom = 0.02f;
-        if (cam->zoom > 5.0f)  cam->zoom = 5.0f;
-
+        Render_HandleInput(dt);
         World_Update(dt);
 
         Render_Begin();
@@ -36,6 +24,6 @@ int main(void)
         Render_End();
     }
 
-    CloseWindow();
+    Render_Shutdown();
     return 0;
 }

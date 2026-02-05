@@ -1,7 +1,9 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include "raylib.h"
+typedef struct {
+    float r, g, b, a;
+} Color;
 
 typedef struct {
     float x, y, r;

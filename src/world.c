@@ -2,21 +2,26 @@
 #include "particle.h"
 #include "physics.h"
 #include "config.h"
-#include "raylib.h"
 #include "grid.h"
+
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 
+/* -------- Utils -------- */
 
+static int RandRange(int min, int max)
+{
+    return min + rand() % (max - min + 1);
+}
 
 static Color RandomColor(void)
 {
     return (Color){
-        .r = GetRandomValue(50, 255),
-        .g = GetRandomValue(50, 255),
-        .b = GetRandomValue(50, 255),
-        .a = 255
+        .r = (float)RandRange(50, 255),
+        .g = (float)RandRange(50, 255),
+        .b = (float)RandRange(50, 255),
+        .a = 255.0f
     };
 }
 
@@ -33,27 +38,31 @@ static int DoesOverlap(float x, float y, float r, int count)
     return 0;
 }
 
+/* -------- World -------- */
+
 void World_Init(int count)
 {
-    SetRandomSeed(time(NULL));
+    srand((unsigned int)time(NULL));
 
     particle_count = count;
     particles = malloc(sizeof(Particle) * particle_count);
+
     Grid_Init();
 
     for (int i = 0; i < particle_count; i++) {
         Particle *p = &particles[i];
-        p->r = GetRandomValue(5, 15);
+
+        p->r = (float)RandRange(5, 15);
 
         int tries = 0;
         do {
-            p->x = GetRandomValue(p->r, WORLD_WIDTH - p->r);
-            p->y = GetRandomValue(p->r, WORLD_HEIGHT - p->r);
+            p->x = (float)RandRange((int)p->r, WORLD_WIDTH  - (int)p->r);
+            p->y = (float)RandRange((int)p->r, WORLD_HEIGHT - (int)p->r);
             tries++;
         } while (DoesOverlap(p->x, p->y, p->r, i) && tries < MAX_TRIES);
 
-        p->vx = GetRandomValue(-200, 200);
-        p->vy = GetRandomValue(-200, 200);
+        p->vx = (float)RandRange(-200, 200);
+        p->vy = (float)RandRange(-200, 200);
         p->color = RandomColor();
     }
 }

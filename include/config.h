@@ -5,10 +5,10 @@
 #define SCREEN_HEIGHT 900
 #define FPS 60
 
-#define WORLD_WIDTH   16000
-#define WORLD_HEIGHT   9000
+#define WORLD_WIDTH   32000
+#define WORLD_HEIGHT   18000
 
-#define NUM_PARTICLES 20000
+#define NUM_PARTICLES 50000
 #define MAX_TRIES 1000
 
 #define CELL_SIZE 40
